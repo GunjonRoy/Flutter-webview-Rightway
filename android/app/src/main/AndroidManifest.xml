@@ -2,7 +2,7 @@
     package="com.example.cheapcitybd">
     <uses-permission android:name="android.permission.INTERNET"/>
    <application
-        android:label="Cheap City"
+        android:label="Cheap City BD"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

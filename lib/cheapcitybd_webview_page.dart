@@ -1,21 +1,13 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// ignore_for_file: public_member_api_docs
-
-import 'dart:async';
-import 'dart:async';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'package:cheapcitybd/view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
 
 const String kNavigationExamplePage = '''
 <!DOCTYPE html><html>
@@ -105,17 +97,13 @@ class _CheapCityBdWebViewPageState extends State<CheapCityBdWebViewPage> {
       WebView.platform = SurfaceAndroidWebView();
     }
   }
+
   void initialization() async {
     // This is where you can initialize the resources needed by your app while
     // the splash screen is displayed.  Remove the following example because
     // delaying the user experience is a bad design practice!
     // ignore_for_file: avoid_print
-    print('ready in 3...');
-    await Future.delayed(const Duration(seconds: 1));
-    print('ready in 2...');
-    await Future.delayed(const Duration(seconds: 1));
-    print('ready in 1...');
-    await Future.delayed(const Duration(seconds: 1));
+    // print('ready in 3...');
     print('go!');
     FlutterNativeSplash.remove();
   }
@@ -131,10 +119,27 @@ class _CheapCityBdWebViewPageState extends State<CheapCityBdWebViewPage> {
     }
   }
 
-  bool isLoading=true;
+  bool isLoading = true;
+  showLoaderDialog(BuildContext context){
+    AlertDialog alert=AlertDialog(
+      content: new Row(
+        children: [
+          CircularProgressIndicator(),
+          Container(margin: EdgeInsets.only(left: 7),child:Text("Loading..." )),
+        ],),
+    );
+    showDialog(barrierDismissible: false,
+      context:context,
+      builder:(BuildContext context){
+        return alert;
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final webViewViewModel=Provider.of<WebViewVewModel>(context);
+
     Timer(Duration(seconds: 3), () {
       if (mounted)
         setState(() {
@@ -160,11 +165,13 @@ class _CheapCityBdWebViewPageState extends State<CheapCityBdWebViewPage> {
               WebView(
                 initialUrl: 'https://cheapcitybd.com',
                 javascriptMode: JavascriptMode.unrestricted,
-                onWebViewCreated: (WebViewController webViewController) {
+                onWebViewCreated: (WebViewController webViewController){
                   _controller.complete(webViewController);
                 },
-                onProgress: (int progress) {
+                onProgress: (int progress){
+                  webViewViewModel.setIsLoading(true);
                   print('WebView is loading (progress : $progress%)');
+
                 },
                 javascriptChannels: <JavascriptChannel>{
                   _toasterJavascriptChannel(context),
@@ -174,6 +181,9 @@ class _CheapCityBdWebViewPageState extends State<CheapCityBdWebViewPage> {
                     print('blocking navigation to $request}');
                     return NavigationDecision.prevent;
                   }
+                  // setState(() {
+                  //   isLoading = true;
+                  // });
                   print('allowing navigation to $request');
                   return NavigationDecision.navigate;
                 },
@@ -182,24 +192,27 @@ class _CheapCityBdWebViewPageState extends State<CheapCityBdWebViewPage> {
                 },
                 onPageFinished: (String url) {
                   print('Page finished loading: $url');
+                  webViewViewModel.setIsLoading(false);
                 },
                 gestureNavigationEnabled: true,
                 backgroundColor: const Color(0x00000000),
               ),
-              isLoading ? Center(
-                child: SizedBox(height:100,width:100,child: Image.asset("asset/icon/cheapcitybd.png")),
-                // Text(
-                //   'APP LOGO',
-                //   style: TextStyle(
-                //     fontSize: 30,
-                //     fontWeight: FontWeight.bold,
-                //   ),
-                // ),
+              webViewViewModel.isLoading
+                  ?AlertDialog(
+                content:  SizedBox(
+                  height: 50,
+                  width: MediaQuery.of(context).size.width*.9,
+                  child: Row(
+                    children: [
+                      CircularProgressIndicator(color: Colors.cyanAccent,),
+                      Container(margin: EdgeInsets.only(left: 15),child:Text("  Loading",style: TextStyle(fontSize: 13), )),
+                    ],),
+                ),
               )
                   : Stack(),
             ],
           ),
-         // floatingActionButton: favoriteButton(),
+          // floatingActionButton: favoriteButton(),
         ),
       ),
     );
